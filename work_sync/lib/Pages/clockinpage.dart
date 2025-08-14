@@ -16,7 +16,6 @@ class ClockInPage extends ConsumerStatefulWidget {
 
 class _ClockInPageState extends ConsumerState<ClockInPage> {
   File? _image;
-  String? _location;
   bool _loading = false;
 
   // Take picture
@@ -31,38 +30,26 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
     }
   }
 
-  // Get location
-  Future<void> _getLocation() async {
-    // Trigger the location update in the notifier
-    await ref.read(userProvider.notifier).loginUser("0712345678");
-
-    // Now read the updated state
-    final userState = ref.read(userProvider);
-
-    setState(() {
-      _location = "${userState.latitude}, ${userState.longitude}";
-    });
-  }
-
   // Clock in
   Future<void> _clockIn() async {
     setState(() => _loading = true);
 
-    // await _getLocation(); // get location first
-
-    // Here you can send `_image` and `_location` to your backend
-    // Example with HTTP can be added
+    // Trigger location update (will update provider state)
+    await ref.read(userProvider.notifier).loginUser("0712345678");
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Clockoutpage(clockInTime: DateTime.now()),
       ),
     );
-    // Get current time
+
+    // Show success message
     final now = TimeOfDay.now();
     final formattedTime =
         "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+
     setState(() => _loading = false);
+
     final snackBar = SnackBar(
       elevation: 0,
       behavior: SnackBarBehavior.floating,
@@ -81,6 +68,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userProvider); // 👈 Watch provider state
+
     return Scaffold(
       appBar: AppBar(title: const Text("Clock In")),
       body: SingleChildScrollView(
@@ -90,7 +79,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Container(
-                margin: EdgeInsets.all(20),
+                margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: Colors.purple,
@@ -169,8 +158,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Latitude")),
                         DataCell(
                           Text(
-                            _location != null
-                                ? _location!.split(',')[0]
+                            userState.latitude != null
+                                ? userState.latitude.toString()
                                 : "Not available",
                           ),
                         ),
@@ -181,8 +170,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Longitude")),
                         DataCell(
                           Text(
-                            _location != null
-                                ? _location!.split(',')[1].trim()
+                            userState.longitude != null
+                                ? userState.longitude.toString()
                                 : "Not available",
                           ),
                         ),
@@ -192,7 +181,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                 ),
               ),
               Container(
-                margin: EdgeInsets.fromLTRB(30, 30, 30, 15),
+                margin: const EdgeInsets.fromLTRB(30, 30, 30, 15),
                 child: GFButton(
                   onPressed: () async {
                     await _clockIn();

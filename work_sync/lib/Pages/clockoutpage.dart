@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
+import 'package:lottie/lottie.dart';
 import 'package:work_sync/Pages/loginpage.dart';
 
 class Clockoutpage extends StatefulWidget {
@@ -73,6 +74,14 @@ class _ClockoutpageState extends State<Clockoutpage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Center(
+              child: Lottie.network(
+                'https://assets1.lottiefiles.com/packages/lf20_w51pcehl.json',
+                width: 200,
+                height: 200,
+                repeat: true,
+              ),
+            ),
             Text(
               "Total Hours Worked",
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),

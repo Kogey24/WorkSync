@@ -1,6 +1,7 @@
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:work_sync/Pages/clockinpage.dart';
 import 'package:work_sync/Providers/permission_provider.dart';
 
 class Loginpage extends ConsumerStatefulWidget {
@@ -12,14 +13,59 @@ class Loginpage extends ConsumerStatefulWidget {
 
 class _LoginpageState extends ConsumerState<Loginpage> {
   final TextEditingController _phoneController = TextEditingController();
-  final GlobalKey<FormState> _loginKey = GlobalKey();
+  final GlobalKey<FormState> _loginKey = GlobalKey<FormState>();
 
-  // Future<void> _login() async {
-  //   Navigator.of(
-  //     context,
-  //   ).push(MaterialPageRoute(builder: (context) => const ClockInPage()));
+  // Regex for Kenyan phone numbers (07XXXXXXXX or +2547XXXXXXXX)
+  final RegExp phonePattern = RegExp(r'^(?:\+254|0)?7\d{8}$');
 
-  // }
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Please enter a phone number";
+    }
+    if (!phonePattern.hasMatch(value)) {
+      return "Enter a valid phone number";
+    }
+    return null;
+  }
+
+  Future<void> _login() async {
+    if (_loginKey.currentState!.validate()) {
+      try {
+        await ref.read(userProvider.notifier).loginUser(_phoneController.text);
+
+        // Navigate after successful login
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const ClockInPage()));
+
+        // Success SnackBar
+        final snackBar = SnackBar(
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.transparent,
+          content: AwesomeSnackbarContent(
+            title: 'Successful!',
+            message: "You can now clock in successfully!",
+            contentType: ContentType.success,
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      } catch (e) {
+        // Error SnackBar
+        final snackBar = SnackBar(
+          elevation: 0,
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.transparent,
+          content: AwesomeSnackbarContent(
+            title: 'Error!',
+            message: "Failed to log in. Please try again.",
+            contentType: ContentType.failure,
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,16 +96,15 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                 ],
               ),
               borderRadius: BorderRadius.circular(30),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
                   color: Colors.black,
                   spreadRadius: 5,
                   blurRadius: 7,
-                  offset: const Offset(0, 3),
+                  offset: Offset(0, 3),
                 ),
               ],
             ),
-
             child: Form(
               key: _loginKey,
               child: Column(
@@ -82,18 +127,11 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                     ),
                     child: TextFormField(
                       controller: _phoneController,
-                      // validator: (value) {
-                      //   if (value == null || value.isEmpty) {
-                      //     return "Please enter an Phone Number";
-                      //   } else if (!emailValid.hasMatch(value)) {
-                      //     return "Please enter a valid email";
-                      //   }
-                      //   return null;
-                      // },
+                      validator: _validatePhone,
                       keyboardType: TextInputType.phone,
                       decoration: const InputDecoration(
                         labelText: 'Phone Number',
-                        hintText: 'Enter your phone number',
+                        hintText: 'e.g. 0712345678 or +254712345678',
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(horizontal: 20),
                       ),
@@ -114,36 +152,7 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                           ),
                         ),
                       ),
-                      onPressed: () async {
-                        try {
-                          await ref
-                              .read(userProvider.notifier)
-                              .loginUser(_phoneController.text);
-                          final snackBar = SnackBar(
-                            elevation: 0,
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.transparent,
-                            content: AwesomeSnackbarContent(
-                              title: 'Successful!',
-                              message: "You can now clock in successfully!",
-                              contentType: ContentType.success,
-                            ),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                        } catch (e) {
-                          final snackBar = SnackBar(
-                            elevation: 0,
-                            behavior: SnackBarBehavior.floating,
-                            backgroundColor: Colors.transparent,
-                            content: AwesomeSnackbarContent(
-                              title: 'Error!',
-                              message: "Failed to log in. Please try again.",
-                              contentType: ContentType.failure,
-                            ),
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                        }
-                      },
+                      onPressed: _login,
                       child: const Text(
                         'Login',
                         style: TextStyle(color: Colors.white, fontSize: 18),
