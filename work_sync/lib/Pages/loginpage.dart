@@ -1,8 +1,11 @@
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:work_sync/Pages/clockinpage.dart';
-import 'package:work_sync/Providers/permission_provider.dart';
+import 'package:work_sync/Pages/clockoutpage.dart';
+import 'package:work_sync/Providers/attendanceProvider.dart';
+import 'package:work_sync/Providers/login_provider.dart';
 
 class Loginpage extends ConsumerStatefulWidget {
   const Loginpage({super.key});
@@ -28,28 +31,61 @@ class _LoginpageState extends ConsumerState<Loginpage> {
     return null;
   }
 
+  final status = Permission.location.request();
   Future<void> _login() async {
     if (_loginKey.currentState!.validate()) {
       try {
-        await ref.read(userProvider.notifier).loginUser(_phoneController.text);
+        final login = await ref
+            .read(loginProvider.notifier)
+            .loginUser(_phoneController.text);
+        debugPrint('Login response: ${login.toString()}');
+        final attendance = await ref
+            .read(attendanceProvider.notifier)
+            .fetchAttendance();
+        if (login != null) {
+          if (login.hasActiveClockin == false) {
+            // Navigate after successful login
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (context) => const ClockInPage()),
+            );
+            status;
 
-        // Navigate after successful login
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (context) => const ClockInPage()));
-
-        // Success SnackBar
-        final snackBar = SnackBar(
-          elevation: 0,
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          content: AwesomeSnackbarContent(
-            title: 'Successful!',
-            message: "You can now clock in successfully!",
-            contentType: ContentType.success,
-          ),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+            // Success SnackBar
+            final snackBar = SnackBar(
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.transparent,
+              content: AwesomeSnackbarContent(
+                title: 'Successful!',
+                message: "You can now clock in successfully!",
+                contentType: ContentType.success,
+              ),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          } else if (attendance?.clockIn != null) {
+            // Navigate to clock out page if already clocked in
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => Clockoutpage(
+                  clockInTime: DateTime.parse(attendance!.clockIn),
+                ),
+              ),
+            );
+          } else {
+            // Show error if clock in time is null
+            final snackBar = SnackBar(
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.transparent,
+              content: AwesomeSnackbarContent(
+                title: 'Error!',
+                message: "Failed to retrieve clock in time.",
+                contentType: ContentType.failure,
+              ),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }
+        }
       } catch (e) {
         // Error SnackBar
         final snackBar = SnackBar(
@@ -155,6 +191,7 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                       onPressed: _login,
                       child: const Text(
                         'Login',
+
                         style: TextStyle(color: Colors.white, fontSize: 18),
                       ),
                     ),

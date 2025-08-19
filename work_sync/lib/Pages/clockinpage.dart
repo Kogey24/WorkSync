@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:getwidget/getwidget.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:work_sync/Pages/clockoutpage.dart';
 import 'package:work_sync/Providers/permission_provider.dart';
@@ -15,60 +14,62 @@ class ClockInPage extends ConsumerStatefulWidget {
 }
 
 class _ClockInPageState extends ConsumerState<ClockInPage> {
-  File? _image;
   bool _loading = false;
-
-  // Take picture
-  Future<void> _takePicture() async {
-    final pickedFile = await ImagePicker().pickImage(
-      source: ImageSource.camera,
-    );
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-    }
-  }
 
   // Clock in
   Future<void> _clockIn() async {
     setState(() => _loading = true);
 
-    // Trigger location update (will update provider state)
-    await ref.read(userProvider.notifier).loginUser("0712345678");
+    final notifier = ref.read(clockInProvider.notifier);
+    final state = ref.read(clockInProvider);
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => Clockoutpage(clockInTime: DateTime.now()),
-      ),
-    );
+    final request = state.value;
+    if (request == null) {
+      setState(() => _loading = false);
+      return;
+    }
 
-    // Show success message
-    final now = TimeOfDay.now();
-    final formattedTime =
-        "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+    // Update with location before sending
+    final updatedRequest = await notifier.updateClockInWithLocation(request);
+    final result = await notifier.sendClockIn(updatedRequest);
 
-    setState(() => _loading = false);
+    if (result != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => Clockoutpage(clockInTime: DateTime.now()),
+        ),
+      );
 
-    final snackBar = SnackBar(
-      elevation: 0,
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: Colors.transparent,
-      content: AwesomeSnackbarContent(
-        title: 'Success!',
-        message: "Clock in successful at $formattedTime",
-        contentType: ContentType.success,
-      ),
-    );
+      // Show success message
+      final now = TimeOfDay.now();
+      final formattedTime =
+          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
+      setState(() => _loading = false);
+
+      final snackBar = SnackBar(
+        elevation: 0,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.transparent,
+        content: AwesomeSnackbarContent(
+          title: 'Success!',
+          message: "Clock in successful at $formattedTime",
+          contentType: ContentType.success,
+        ),
+      );
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(snackBar);
+    } else {
+      setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(userProvider); // 👈 Watch provider state
+    final userState = ref.watch(clockInProvider); // 👈 Watch provider state
+    final request = userState.value;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Clock In")),
@@ -78,6 +79,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
+              // Camera and preview
               Container(
                 margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -93,15 +95,30 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _image != null
-                          ? Image.file(_image!, height: 200)
+                      request?.imagePath != null &&
+                              request!.imagePath.isNotEmpty
+                          ? Image.file(File(request.imagePath), height: 200)
                           : const Icon(
                               Icons.camera_alt,
                               size: 100,
                               color: Colors.grey,
                             ),
                       GFButton(
-                        onPressed: _takePicture,
+                        onPressed: () async {
+                          try {
+                            final updatedRequest = await ref
+                                .read(clockInProvider.notifier)
+                                .takePicture(request!);
+
+                            // ✅ Safe: updatedRequest is always a valid ClockInRequest
+                            print("Image path: ${updatedRequest.imagePath}");
+                          } catch (e) {
+                            // Handle gracefully
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        },
                         text: "Take a picture",
                         shape: GFButtonShape.pills,
                         color: Colors.purple,
@@ -111,6 +128,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   ),
                 ),
               ),
+
+              // DataTable with coords
               Container(
                 margin: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                 child: DataTable(
@@ -134,7 +153,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                     ),
                     DataColumn(
                       label: Text(
-                        "Coordinates",
+                        "Value",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFFD700),
@@ -158,8 +177,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Latitude")),
                         DataCell(
                           Text(
-                            userState.latitude != null
-                                ? userState.latitude.toString()
+                            request?.clockInLat.isNotEmpty == true
+                                ? request!.clockInLat
                                 : "Not available",
                           ),
                         ),
@@ -170,8 +189,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Longitude")),
                         DataCell(
                           Text(
-                            userState.longitude != null
-                                ? userState.longitude.toString()
+                            request?.clockInLng.isNotEmpty == true
+                                ? request!.clockInLng
                                 : "Not available",
                           ),
                         ),
@@ -180,13 +199,15 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   ],
                 ),
               ),
+
+              // Submit button
               Container(
                 margin: const EdgeInsets.fromLTRB(30, 30, 30, 15),
                 child: GFButton(
                   onPressed: () async {
                     await _clockIn();
                   },
-                  text: "Clock In",
+                  text: _loading ? "Loading..." : "Clock In",
                   shape: GFButtonShape.pills,
                   color: Colors.purple,
                   fullWidthButton: true,
