@@ -1,83 +1,22 @@
-class ClockInRequest {
-  final int staffId;
-  final int siteId;
-  final String clockIn; // ISO8601 string
-  final String clockInLat;
-  final String clockInLng;
-  final String clockInImage;
-  final String updatedAt; // ISO8601 string
-  final String createdAt; // ISO8601 string
-  final int id;
-  final String imagePath;
+class user {
+  final String? phonenumber;
+  final double? latitude;
+  final double? longitude;
+  final bool? granted;
 
-  ClockInRequest({
-    required this.staffId,
-    required this.siteId,
-    required this.clockIn,
-    required this.clockInLat,
-    required this.clockInLng,
-    required this.clockInImage,
-    required this.updatedAt,
-    required this.createdAt,
-    required this.id,
-    required this.imagePath,
-  });
+  user({this.phonenumber, this.latitude, this.longitude, this.granted = false});
 
-  /// Factory to create a ClockIn object from JSON
-  factory ClockInRequest.fromJson(Map<String, dynamic> json) {
-    return ClockInRequest(
-      staffId: json['staff_id'] ?? 0,
-      siteId: json['site_id'] ?? 0,
-      clockIn: json['clock_in'] ?? "",
-      clockInLat: json['clock_in_lat'] ?? "",
-      clockInLng: json['clock_in_lng'] ?? "",
-      clockInImage: json['clock_in_image'] ?? "",
-      updatedAt: json['updated_at'] ?? "",
-      createdAt: json['created_at'] ?? "",
-      id: json['id'] ?? 0,
-      imagePath: json['image_path'] ?? "",
-    );
-  }
-
-  /// Convert ClockIn object back to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'staff_id': staffId,
-      'site_id': siteId,
-      'clock_in': clockIn,
-      'clock_in_lat': clockInLat,
-      'clock_in_lng': clockInLng,
-      'clock_in_image': clockInImage,
-      'updated_at': updatedAt,
-      'created_at': createdAt,
-      'id': id,
-      'image_path': imagePath,
-    };
-  }
-
-  ClockInRequest copyWith({
-    int? staffId,
-    int? siteId,
-    String? clockIn,
-    String? clockInLat,
-    String? clockInLng,
-    String? clockInImage,
-    String? updatedAt,
-    String? createdAt,
-    int? id,
-    String? imagePath,
+  user copyWith({
+    String? phonenumber,
+    double? latitude,
+    double? longitude,
+    bool? granted,
   }) {
-    return ClockInRequest(
-      staffId: staffId ?? this.staffId,
-      siteId: siteId ?? this.siteId,
-      clockIn: clockIn ?? this.clockIn,
-      clockInLat: clockInLat ?? this.clockInLat,
-      clockInLng: clockInLng ?? this.clockInLng,
-      clockInImage: clockInImage ?? this.clockInImage,
-      updatedAt: updatedAt ?? this.updatedAt,
-      createdAt: createdAt ?? this.createdAt,
-      id: id ?? this.id,
-      imagePath: imagePath ?? this.imagePath,
+    return user(
+      phonenumber: phonenumber ?? this.phonenumber,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      granted: granted ?? this.granted,
     );
   }
 }

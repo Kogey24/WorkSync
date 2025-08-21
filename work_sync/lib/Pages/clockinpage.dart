@@ -2,9 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:getwidget/getwidget.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
-import 'package:work_sync/Pages/clockoutpage.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:work_sync/Models/clockin.dart';
 import 'package:work_sync/Providers/permission_provider.dart';
+import 'clockoutpage.dart';
 
 class ClockInPage extends ConsumerStatefulWidget {
   const ClockInPage({super.key});
@@ -14,63 +18,153 @@ class ClockInPage extends ConsumerStatefulWidget {
 }
 
 class _ClockInPageState extends ConsumerState<ClockInPage> {
+  File? _image;
   bool _loading = false;
+
+  double? _latitude;
+  double? _longitude;
+
+  @override
+  void initState() {
+    super.initState();
+    _getLocation(); // fetch as soon as page loads
+  }
+
+  // Take picture
+  Future<void> _takePicture() async {
+    final pickedFile = await ImagePicker().pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+        debugPrint("Image selected: ${_image!.path}");
+      });
+    }
+  }
+
+  // Request location permission and get coordinates
+  Future<void> _getLocation() async {
+    final status = await Permission.location.request();
+
+    if (status.isGranted) {
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+        setState(() {
+          _latitude = position.latitude;
+          _longitude = position.longitude;
+        });
+      } catch (e) {
+        debugPrint("Failed to get location: $e");
+      }
+    } else if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    }
+  }
+
+  /// Bundle into ClockInRequest
+  ClockInRequest _createClockInRequest() {
+    if (_image == null || _latitude == null || _longitude == null) {
+      throw Exception("Image or location not available yet");
+    }
+
+    final now = DateTime.now();
+
+    return ClockInRequest(
+      id: 0, // or whatever type your backend expects
+      staffId: 1,
+      siteId: 1,
+      clockIn: now.toIso8601String(), // convert DateTime → String
+      clockInLat: _latitude.toString(), // convert double → String
+      clockInLng: _longitude.toString(),
+      clockInImage: _image!.path,
+      updatedAt: now.toIso8601String(),
+      createdAt: now.toIso8601String(),
+    );
+  }
 
   // Clock in
   Future<void> _clockIn() async {
     setState(() => _loading = true);
 
-    final notifier = ref.read(clockInProvider.notifier);
-    final state = ref.read(clockInProvider);
+    try {
+      final request = _createClockInRequest();
+      debugPrint("ClockInRequest prepared: ${request.toJson()}");
 
-    final request = state.value;
-    if (request == null) {
-      setState(() => _loading = false);
-      return;
-    }
+      // Post the clock-in request using provider
+      await ref.read(clockInProvider.notifier).postClockIn(request);
 
-    // Update with location before sending
-    final updatedRequest = await notifier.updateClockInWithLocation(request);
-    final result = await notifier.sendClockIn(updatedRequest);
+      final clockInState = ref.read(clockInProvider);
 
-    if (result != null) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Clockoutpage(clockInTime: DateTime.now()),
-        ),
+      clockInState.when(
+        data: (data) {
+          if (data != null) {
+            // Navigate when success
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                    Clockoutpage(clockInTime: DateTime.parse(request.clockIn)),
+              ),
+            );
+
+            // Show snackbar
+            final clockInDate = DateTime.parse(request.clockIn);
+            final formattedTime =
+                "${clockInDate.hour.toString().padLeft(2, '0')}:${clockInDate.minute.toString().padLeft(2, '0')}";
+
+            final snackBar = SnackBar(
+              elevation: 0,
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: Colors.transparent,
+              content: AwesomeSnackbarContent(
+                title: 'Success!',
+                message: "Clock in successful at $formattedTime",
+                contentType: ContentType.success,
+              ),
+            );
+
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(snackBar);
+          }
+        },
+        error: (err, _) {
+          _showError(err.toString());
+        },
+        loading: () {
+          debugPrint("Clocking in...");
+        },
       );
-
-      // Show success message
-      final now = TimeOfDay.now();
-      final formattedTime =
-          "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
-
-      setState(() => _loading = false);
-
-      final snackBar = SnackBar(
-        elevation: 0,
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.transparent,
-        content: AwesomeSnackbarContent(
-          title: 'Success!',
-          message: "Clock in successful at $formattedTime",
-          contentType: ContentType.success,
-        ),
-      );
-
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(snackBar);
-    } else {
+    } catch (e) {
+      debugPrint("Clock-in failed: $e");
+      _showError(e.toString());
+    } finally {
       setState(() => _loading = false);
     }
   }
 
+  void _showError(String message) {
+    final snackBar = SnackBar(
+      elevation: 0,
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Colors.transparent,
+      content: AwesomeSnackbarContent(
+        title: 'Error!',
+        message: message,
+        contentType: ContentType.failure,
+      ),
+    );
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(clockInProvider); // 👈 Watch provider state
-    final request = userState.value;
-
     return Scaffold(
       appBar: AppBar(title: const Text("Clock In")),
       body: SingleChildScrollView(
@@ -79,7 +173,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              // Camera and preview
               Container(
                 margin: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -95,30 +188,15 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      request?.imagePath != null &&
-                              request!.imagePath.isNotEmpty
-                          ? Image.file(File(request.imagePath), height: 200)
+                      _image != null
+                          ? Image.file(_image!, height: 200)
                           : const Icon(
                               Icons.camera_alt,
                               size: 100,
                               color: Colors.grey,
                             ),
                       GFButton(
-                        onPressed: () async {
-                          try {
-                            final updatedRequest = await ref
-                                .read(clockInProvider.notifier)
-                                .takePicture(request!);
-
-                            // ✅ Safe: updatedRequest is always a valid ClockInRequest
-                            print("Image path: ${updatedRequest.imagePath}");
-                          } catch (e) {
-                            // Handle gracefully
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())),
-                            );
-                          }
-                        },
+                        onPressed: _takePicture,
                         text: "Take a picture",
                         shape: GFButtonShape.pills,
                         color: Colors.purple,
@@ -128,8 +206,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   ),
                 ),
               ),
-
-              // DataTable with coords
               Container(
                 margin: const EdgeInsets.fromLTRB(0, 12, 0, 0),
                 child: DataTable(
@@ -153,7 +229,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                     ),
                     DataColumn(
                       label: Text(
-                        "Value",
+                        "Coordinates",
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFFFD700),
@@ -177,8 +253,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Latitude")),
                         DataCell(
                           Text(
-                            request?.clockInLat.isNotEmpty == true
-                                ? request!.clockInLat
+                            _latitude != null
+                                ? _latitude.toString()
                                 : "Not available",
                           ),
                         ),
@@ -189,8 +265,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                         const DataCell(Text("Longitude")),
                         DataCell(
                           Text(
-                            request?.clockInLng.isNotEmpty == true
-                                ? request!.clockInLng
+                            _longitude != null
+                                ? _longitude.toString()
                                 : "Not available",
                           ),
                         ),
@@ -199,15 +275,11 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                   ],
                 ),
               ),
-
-              // Submit button
               Container(
                 margin: const EdgeInsets.fromLTRB(30, 30, 30, 15),
                 child: GFButton(
-                  onPressed: () async {
-                    await _clockIn();
-                  },
-                  text: _loading ? "Loading..." : "Clock In",
+                  onPressed: _loading ? null : _clockIn,
+                  text: _loading ? "Clocking In..." : "Clock In",
                   shape: GFButtonShape.pills,
                   color: Colors.purple,
                   fullWidthButton: true,
