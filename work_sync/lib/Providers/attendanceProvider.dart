@@ -4,22 +4,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:work_sync/Models/attendance.dart';
+import 'package:work_sync/Providers/login_provider.dart'; // make sure this is your login provider import
 
 final attendanceProvider =
     StateNotifierProvider<AttendanceNotifier, AsyncValue<Attendance?>>((ref) {
-      return AttendanceNotifier();
+      return AttendanceNotifier(ref);
     });
 
 class AttendanceNotifier extends StateNotifier<AsyncValue<Attendance?>> {
-  AttendanceNotifier() : super(const AsyncValue.data(null));
+  final Ref ref; // keep a reference to ref
+
+  AttendanceNotifier(this.ref) : super(const AsyncValue.data(null));
 
   Future<Attendance?> fetchAttendance() async {
-    debugPrint("Fetching attendance begin...");
+    // Read login provider state to get staffId
+    final loginState = ref.read(loginProvider);
+    final staffId = loginState.value?.staff.id;
+
+    if (staffId == null) {
+      state = const AsyncValue.error(
+        "No staffId found. Please login first.",
+        StackTrace.empty,
+      );
+      return null;
+    }
+
+    debugPrint("Fetching attendance for staffId: $staffId ...");
     state = const AsyncValue.loading();
+
     try {
       final url = Uri.parse(
-        "https://clockin.nexoratech.co.ke/api/staff/1/attendance",
+        "https://clockin.nexoratech.co.ke/api/staff/$staffId/attendance",
       );
+
       final resp = await http.get(url);
       debugPrint("Attendance response: ${resp.body}");
 

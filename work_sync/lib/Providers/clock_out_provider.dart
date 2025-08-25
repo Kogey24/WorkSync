@@ -5,15 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:work_sync/Models/clockin.dart';
 
-final clockInProvider =
-    StateNotifierProvider<ClockInNotifier, AsyncValue<Map<String, dynamic>>>(
-      (ref) => ClockInNotifier(),
+final clockOutProvider =
+    StateNotifierProvider<ClockOutNotifier, AsyncValue<Map<String, dynamic>>>(
+      (ref) => ClockOutNotifier(),
     );
 
-class ClockInNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
-  ClockInNotifier() : super(const AsyncValue.data({}));
+class ClockOutNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
+  ClockOutNotifier() : super(const AsyncValue.data({}));
 
-  final String apiUrl = "https://clockin.nexoratech.co.ke/api/staff/clock-in";
+  final String apiUrl = "https://clockin.nexoratech.co.ke/api/staff/clock-out";
 
   Future<Map<String, dynamic>?> clockIn(ClockIn request) async {
     state = const AsyncValue.loading();

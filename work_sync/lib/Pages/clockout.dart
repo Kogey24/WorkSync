@@ -7,17 +7,17 @@ import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
-import 'package:work_sync/Pages/clockoutpage.dart';
+import 'package:work_sync/Pages/loginpage.dart';
 import 'package:work_sync/Providers/login_provider.dart';
 
-class ClockInPage extends ConsumerStatefulWidget {
-  const ClockInPage({super.key});
+class Clockout extends ConsumerStatefulWidget {
+  const Clockout({super.key});
 
   @override
-  ConsumerState<ClockInPage> createState() => _ClockInPageState();
+  ConsumerState<Clockout> createState() => _ClockoutState();
 }
 
-class _ClockInPageState extends ConsumerState<ClockInPage> {
+class _ClockoutState extends ConsumerState<Clockout> {
   File? _image;
   bool _loading = false;
 
@@ -77,7 +77,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
       final dio = Dio();
       final loginState = ref.watch(loginProvider);
 
-      // ✅ Use mobile from login response
       final mobile = loginState.value?.staff.mobile ?? "";
 
       final formData = FormData.fromMap({
@@ -94,7 +93,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
       debugPrint("👉 File attached: ${_image!.path}");
 
       final response = await dio.post(
-        "https://clockin.nexoratech.co.ke/api/staff/clock-in",
+        "https://clockin.nexoratech.co.ke/api/staff/clock-out",
         data: formData,
         options: Options(
           headers: {"Accept": "application/json"},
@@ -134,7 +133,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
             backgroundColor: Colors.transparent,
             content: AwesomeSnackbarContent(
               title: 'Success!',
-              message: "Clock in successful at $formattedTime",
+              message: "Clock out successful at $formattedTime",
               contentType: ContentType.success,
             ),
           );
@@ -146,23 +145,23 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
           // ✅ Navigate to Clockoutpage with API clock_in time
           Future.delayed(const Duration(seconds: 1), () {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => Clockoutpage(clockInTime: parsedClockIn!),
-              ),
+              MaterialPageRoute(builder: (context) => Loginpage()),
             );
           });
         } else {
           _showError(
-            message.isNotEmpty ? message : "Clock-in failed. Please try again.",
+            message.isNotEmpty
+                ? message
+                : "Clock-out failed. Please try again.",
           );
         }
       } else {
         _showError(
-          "Clock-in failed [${response.statusCode}]: ${response.data}",
+          "Clock-out failed [${response.statusCode}]: ${response.data}",
         );
       }
     } catch (e) {
-      debugPrint("❌ Clock-in failed: $e");
+      debugPrint("❌ Clock-out failed: $e");
       _showError("Error: $e");
     } finally {
       setState(() => _loading = false);
@@ -189,7 +188,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Clock In")),
+      appBar: AppBar(title: const Text("Clock Out")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -279,7 +278,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
               margin: const EdgeInsets.fromLTRB(30, 30, 30, 15),
               child: GFButton(
                 onPressed: _loading ? null : _clockIn,
-                text: _loading ? "Clocking In..." : "Clock In",
+                text: _loading ? "Clocking out..." : "Clock out",
                 shape: GFButtonShape.pills,
                 color: Colors.purple,
                 fullWidthButton: true,

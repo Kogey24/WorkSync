@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:getwidget/getwidget.dart';
 import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:lottie/lottie.dart';
-import 'package:work_sync/Pages/loginpage.dart';
+import 'package:work_sync/Pages/Clockout.dart';
 
 class Clockoutpage extends StatefulWidget {
   final DateTime clockInTime;
@@ -47,13 +47,13 @@ class _ClockoutpageState extends State<Clockoutpage> {
   void _clockOut() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (context) => const Loginpage()));
+    ).push(MaterialPageRoute(builder: (context) => const Clockout()));
     final snackBar = SnackBar(
       elevation: 0,
       behavior: SnackBarBehavior.floating,
       backgroundColor: Colors.transparent,
       content: AwesomeSnackbarContent(
-        title: 'Clocked Out!',
+        title: 'Proceed to Clock Out!',
         message:
             "You worked for ${_formatDuration(_elapsedTime)} hours today. Great job!",
         contentType: ContentType.warning,
@@ -103,7 +103,7 @@ class _ClockoutpageState extends State<Clockoutpage> {
             // Clock Out Button
             GFButton(
               onPressed: _clockOut,
-              text: "Clock Out",
+              text: "Proceed to Clock Out",
               shape: GFButtonShape.pills,
               color: Colors.red,
               fullWidthButton: true,
