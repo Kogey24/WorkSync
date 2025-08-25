@@ -30,7 +30,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
     _getLocation();
   }
 
-  /// Take picture
   Future<void> _takePicture() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.camera,
@@ -43,7 +42,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
     }
   }
 
-  /// Get location
   Future<void> _getLocation() async {
     final status = await Permission.location.request();
 
@@ -64,7 +62,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
     }
   }
 
-  /// Perform clock-in request (multipart upload)
   Future<void> _clockIn() async {
     if (_image == null || _latitude == null || _longitude == null) {
       _showError("Please capture a picture and allow location first.");
@@ -77,7 +74,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
       final dio = Dio();
       final loginState = ref.watch(loginProvider);
 
-      // ✅ Use mobile from login response
       final mobile = loginState.value?.staff.mobile ?? "";
 
       final formData = FormData.fromMap({
@@ -109,7 +105,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
         final message = data["message"]?.toString() ?? "";
 
         if (message.toLowerCase().contains("successful")) {
-          // ✅ Extract clock_in from API
           final apiClockIn = data["data"]?["clock_in"];
           DateTime? parsedClockIn;
 
@@ -127,7 +122,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
           final formattedTime =
               "${parsedClockIn.hour.toString().padLeft(2, '0')}:${parsedClockIn.minute.toString().padLeft(2, '0')}";
 
-          // ✅ Show success Snackbar
           final snackBar = SnackBar(
             elevation: 0,
             behavior: SnackBarBehavior.floating,
@@ -143,7 +137,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
             ..hideCurrentSnackBar()
             ..showSnackBar(snackBar);
 
-          // ✅ Navigate to Clockoutpage with API clock_in time
           Future.delayed(const Duration(seconds: 1), () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(

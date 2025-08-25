@@ -12,7 +12,6 @@ final loginProvider =
 class LoginNotifier extends StateNotifier<AsyncValue<LoginResponse?>> {
   LoginNotifier() : super(const AsyncValue.data(null));
 
-  /// Returns the parsed response so callers can make decisions immediately.
   Future<LoginResponse?> loginUser(String phone, {http.Client? client}) async {
     state = const AsyncValue.loading();
     final c = client ?? http.Client();

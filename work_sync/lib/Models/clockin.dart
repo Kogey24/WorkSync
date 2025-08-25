@@ -11,7 +11,6 @@ class ClockIn {
     required this.image,
   });
 
-  /// Convert to JSON for API
   Map<String, dynamic> toJson() {
     return {
       "mobile": mobile,
@@ -21,7 +20,6 @@ class ClockIn {
     };
   }
 
-  /// Parse from JSON response
   factory ClockIn.fromJson(Map<String, dynamic> json) {
     return ClockIn(
       mobile: json["mobile"] ?? "",
@@ -35,7 +33,6 @@ class ClockIn {
     );
   }
 
-  /// CopyWith for immutability
   ClockIn copyWith({
     String? mobile,
     double? latitude,

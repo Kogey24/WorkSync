@@ -30,7 +30,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
     _getLocation();
   }
 
-  /// Take picture
   Future<void> _takePicture() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.camera,
@@ -43,7 +42,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
     }
   }
 
-  /// Get location
   Future<void> _getLocation() async {
     final status = await Permission.location.request();
 
@@ -64,7 +62,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
     }
   }
 
-  /// Perform clock-in request (multipart upload)
   Future<void> _clockIn() async {
     if (_image == null || _latitude == null || _longitude == null) {
       _showError("Please capture a picture and allow location first.");
@@ -108,7 +105,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
         final message = data["message"]?.toString() ?? "";
 
         if (message.toLowerCase().contains("successful")) {
-          // ✅ Extract clock_in from API
           final apiClockIn = data["data"]?["clock_in"];
           DateTime? parsedClockIn;
 
@@ -126,7 +122,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
           final formattedTime =
               "${parsedClockIn.hour.toString().padLeft(2, '0')}:${parsedClockIn.minute.toString().padLeft(2, '0')}";
 
-          // ✅ Show success Snackbar
           final snackBar = SnackBar(
             elevation: 0,
             behavior: SnackBarBehavior.floating,
@@ -142,7 +137,6 @@ class _ClockoutState extends ConsumerState<Clockout> {
             ..hideCurrentSnackBar()
             ..showSnackBar(snackBar);
 
-          // ✅ Navigate to Clockoutpage with API clock_in time
           Future.delayed(const Duration(seconds: 1), () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => Loginpage()),

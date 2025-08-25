@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:work_sync/Models/clockin.dart';
 
-final clockOutProvider =
+final clockProvider =
     StateNotifierProvider<ClockOutNotifier, AsyncValue<Map<String, dynamic>>>(
       (ref) => ClockOutNotifier(),
     );
@@ -22,12 +22,10 @@ class ClockOutNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
       var uri = Uri.parse(apiUrl);
       var multipartReq = http.MultipartRequest("POST", uri);
 
-      // Fields
       multipartReq.fields['mobile'] = request.mobile;
       multipartReq.fields['latitude'] = request.latitude.toString();
       multipartReq.fields['longitude'] = request.longitude.toString();
 
-      // Attach image
       if (request.image.isNotEmpty && File(request.image).existsSync()) {
         multipartReq.files.add(
           await http.MultipartFile.fromPath(
@@ -47,7 +45,7 @@ class ClockOutNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
           streamedResponse.statusCode == 201) {
         final jsonResponse = jsonDecode(responseBody) as Map<String, dynamic>;
         state = AsyncValue.data(jsonResponse);
-        return jsonResponse; // ✅ return usable response
+        return jsonResponse;
       } else {
         final error = "HTTP ${streamedResponse.statusCode}: $responseBody";
         state = AsyncValue.error(error, StackTrace.current);

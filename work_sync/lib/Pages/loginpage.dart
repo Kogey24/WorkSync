@@ -18,7 +18,6 @@ class _LoginpageState extends ConsumerState<Loginpage> {
   final TextEditingController _phoneController = TextEditingController();
   final GlobalKey<FormState> _loginKey = GlobalKey<FormState>();
 
-  // Regex for Kenyan phone numbers (07XXXXXXXX or +2547XXXXXXXX)
   final RegExp phonePattern = RegExp(r'^(?:\+254|0)?7\d{8}$');
 
   String? _validatePhone(String? value) {
@@ -44,13 +43,11 @@ class _LoginpageState extends ConsumerState<Loginpage> {
             .fetchAttendance();
         if (login != null) {
           if (login.hasActiveClockin == false) {
-            // Navigate after successful login
             Navigator.of(context).push(
               MaterialPageRoute(builder: (context) => const ClockInPage()),
             );
             status;
 
-            // Success SnackBar
             final snackBar = SnackBar(
               elevation: 0,
               behavior: SnackBarBehavior.floating,
@@ -63,7 +60,6 @@ class _LoginpageState extends ConsumerState<Loginpage> {
             );
             ScaffoldMessenger.of(context).showSnackBar(snackBar);
           } else if (attendance?.clockIn != null) {
-            // Navigate to clock out page if already clocked in
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => Clockoutpage(
@@ -72,7 +68,6 @@ class _LoginpageState extends ConsumerState<Loginpage> {
               ),
             );
           } else {
-            // Show error if clock in time is null
             final snackBar = SnackBar(
               elevation: 0,
               behavior: SnackBarBehavior.floating,
@@ -87,7 +82,6 @@ class _LoginpageState extends ConsumerState<Loginpage> {
           }
         }
       } catch (e) {
-        // Error SnackBar
         final snackBar = SnackBar(
           elevation: 0,
           behavior: SnackBarBehavior.floating,

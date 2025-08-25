@@ -22,7 +22,6 @@ class _ClockoutpageState extends State<Clockoutpage> {
     super.initState();
     _elapsedTime = DateTime.now().difference(widget.clockInTime);
 
-    // Update every second
     _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {
         _elapsedTime = DateTime.now().difference(widget.clockInTime);
@@ -88,7 +87,6 @@ class _ClockoutpageState extends State<Clockoutpage> {
             ),
             SizedBox(height: 20),
 
-            // Live Timer
             Text(
               _formatDuration(_elapsedTime),
               style: TextStyle(
@@ -100,7 +98,6 @@ class _ClockoutpageState extends State<Clockoutpage> {
 
             SizedBox(height: 50),
 
-            // Clock Out Button
             GFButton(
               onPressed: _clockOut,
               text: "Proceed to Clock Out",

@@ -1,10 +1,9 @@
-// attendance_provider.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:work_sync/Models/attendance.dart';
-import 'package:work_sync/Providers/login_provider.dart'; // make sure this is your login provider import
+import 'package:work_sync/Providers/login_provider.dart';
 
 final attendanceProvider =
     StateNotifierProvider<AttendanceNotifier, AsyncValue<Attendance?>>((ref) {
@@ -12,12 +11,11 @@ final attendanceProvider =
     });
 
 class AttendanceNotifier extends StateNotifier<AsyncValue<Attendance?>> {
-  final Ref ref; // keep a reference to ref
+  final Ref ref;
 
   AttendanceNotifier(this.ref) : super(const AsyncValue.data(null));
 
   Future<Attendance?> fetchAttendance() async {
-    // Read login provider state to get staffId
     final loginState = ref.read(loginProvider);
     final staffId = loginState.value?.staff.id;
 

@@ -15,7 +15,6 @@ class Attendance {
     required this.timeElapsed,
   });
 
-  // Factory constructor to create Attendance from JSON
   factory Attendance.fromJson(Map<String, dynamic> json) {
     return Attendance(
       id: json['id'] as int,
@@ -27,7 +26,6 @@ class Attendance {
     );
   }
 
-  // Method to convert Attendance back to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
