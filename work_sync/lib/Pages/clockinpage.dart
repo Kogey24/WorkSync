@@ -100,11 +100,11 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
       debugPrint("✅ API Raw Response: ${response.data}");
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = response.data;
         final message = data["message"]?.toString() ?? "";
 
-        if (message.toLowerCase().contains("successful")) {
+        if (message.toLowerCase().contains("Clock-in successful")) {
           final apiClockIn = data["data"]?["clock_in"];
           DateTime? parsedClockIn;
 
