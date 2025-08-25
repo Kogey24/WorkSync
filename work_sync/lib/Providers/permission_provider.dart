@@ -1,42 +1,54 @@
-import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:work_sync/Models/clockin.dart';
 
-final clockInProvider =
-    StateNotifierProvider<ClockInNotifier, AsyncValue<ClockInRequest?>>(
-      (ref) => ClockInNotifier(),
-    );
+final clockInProvider = StateNotifierProvider<ClockInNotifier, bool>(
+  (ref) => ClockInNotifier(),
+);
 
-class ClockInNotifier extends StateNotifier<AsyncValue<ClockInRequest?>> {
-  ClockInNotifier() : super(const AsyncValue.data(null));
+class ClockInNotifier extends StateNotifier<bool> {
+  ClockInNotifier() : super(false);
 
-  Future<void> postClockIn(ClockInRequest request) async {
-    state = const AsyncValue.loading();
+  final String apiUrl = "https://clockin.nexoratech.co.ke/api/staff/clock-in";
 
+  Future<void> clockIn(ClockIn request) async {
     try {
-      // Example API endpoint (replace with your real one)
-      final url = Uri.parse(
-        "https://clockin.nexoratech.co.ke/api/staff/clock-in",
-      );
+      state = true; // loading
 
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(request.toJson()),
-      );
+      var uri = Uri.parse(apiUrl);
+      var multipartReq = http.MultipartRequest("POST", uri);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        // Successfully clocked in
-        state = AsyncValue.data(request);
-      } else {
-        state = AsyncValue.error(
-          "Failed: ${response.statusCode} - ${response.body}",
-          StackTrace.current,
+      // Add text fields
+      multipartReq.fields['mobile'] = request.mobile;
+      multipartReq.fields['latitude'] = request.latitude.toString();
+      multipartReq.fields['longitude'] = request.longitude.toString();
+
+      // Attach the image file
+      if (request.image.isNotEmpty && File(request.image).existsSync()) {
+        multipartReq.files.add(
+          await http.MultipartFile.fromPath("image", request.image),
         );
+      } else {
+        throw Exception("No valid image file found at ${request.image}");
       }
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
+
+      // Send the request
+      var streamedResponse = await multipartReq.send();
+      var responseBody = await streamedResponse.stream.bytesToString();
+
+      if (streamedResponse.statusCode == 200 ||
+          streamedResponse.statusCode == 201) {
+        print("✅ Clock-in success!");
+        print("Response: $responseBody");
+      } else {
+        print("❌ Clock-in failed. Status: ${streamedResponse.statusCode}");
+        print("Response: $responseBody");
+      }
+    } catch (e) {
+      print("⚠️ Error during clock-in: $e");
+    } finally {
+      state = false; // stop loading
     }
   }
 }
