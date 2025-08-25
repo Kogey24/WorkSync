@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
 import 'package:work_sync/Pages/clockoutpage.dart';
+import 'package:work_sync/Providers/login_provider.dart';
 
 class ClockInPage extends ConsumerStatefulWidget {
   const ClockInPage({super.key});
@@ -74,9 +75,13 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
     try {
       final dio = Dio();
+      final loginState = ref.watch(loginProvider);
+
+      // ✅ Use mobile from login response
+      final mobile = loginState.value?.staff.mobile ?? "";
 
       final formData = FormData.fromMap({
-        "mobile": "254700000000", // TODO: replace with dynamic user mobile
+        "mobile": mobile,
         "latitude": _latitude.toString(),
         "longitude": _longitude.toString(),
         "image": await MultipartFile.fromFile(
@@ -85,46 +90,65 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
         ),
       });
 
-      debugPrint("Sending clock-in data: $formData");
+      debugPrint("👉 Sending to API: ${formData.fields}");
+      debugPrint("👉 File attached: ${_image!.path}");
 
       final response = await dio.post(
-        "https://clockin.nexoratech.co.ke/api/clockin", // <-- your API endpoint
+        "https://clockin.nexoratech.co.ke/api/staff/clock-in",
         data: formData,
-        options: Options(headers: {"Accept": "application/json"}),
+        options: Options(
+          headers: {"Accept": "application/json"},
+          validateStatus: (status) => status != null && status < 500,
+        ),
       );
 
-      debugPrint("Response: ${response.data}");
+      debugPrint("✅ API Raw Response: ${response.data}");
 
       if (response.statusCode == 200) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => Clockoutpage(clockInTime: DateTime.now()),
-          ),
-        );
+        final data = response.data;
+        final message = data["message"]?.toString() ?? "";
 
-        final now = DateTime.now();
-        final formattedTime =
-            "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
+        if (message.toLowerCase().contains("successful")) {
+          final now = DateTime.now();
+          final formattedTime =
+              "${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}";
 
-        final snackBar = SnackBar(
-          elevation: 0,
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.transparent,
-          content: AwesomeSnackbarContent(
-            title: 'Success!',
-            message: "Clock in successful at $formattedTime",
-            contentType: ContentType.success,
-          ),
-        );
+          // ✅ Show success Snackbar
+          final snackBar = SnackBar(
+            elevation: 0,
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.transparent,
+            content: AwesomeSnackbarContent(
+              title: 'Success!',
+              message: "Clock in successful at $formattedTime",
+              contentType: ContentType.success,
+            ),
+          );
 
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(snackBar);
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(snackBar);
+
+          // ✅ Navigate to Clockoutpage after snackbar
+          Future.delayed(const Duration(seconds: 1), () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => Clockoutpage(clockInTime: now),
+              ),
+            );
+          });
+        } else {
+          _showError(
+            message.isNotEmpty ? message : "Clock-in failed. Please try again.",
+          );
+        }
       } else {
-        _showError("Failed with status: ${response.statusCode}");
+        _showError(
+          "Clock-in failed [${response.statusCode}]: ${response.data}",
+        );
       }
     } catch (e) {
-      debugPrint("Clock-in failed: $e");
+      debugPrint("❌ Clock-in failed: $e");
       _showError("Error: $e");
     } finally {
       setState(() => _loading = false);
