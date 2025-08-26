@@ -31,7 +31,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
   void initState() {
     super.initState();
     _getLocation();
-
     Future.microtask(() => ref.read(siteProvider.notifier).fetchSites());
   }
 
@@ -83,7 +82,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
     try {
       final dio = Dio();
       final loginState = ref.watch(loginProvider);
-
       final mobile = loginState.value?.staff.mobile ?? "";
 
       final formData = FormData.fromMap({
@@ -162,6 +160,18 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
           _showError(
             message.isNotEmpty ? message : "Clock-in failed. Please try again.",
           );
+        }
+      } else if (response.statusCode == 403) {
+        // Forbidden - Site mismatch
+        _showError("Clock-in failed: Forbidden (Site mismatch)");
+      } else if (response.statusCode == 422) {
+        // Validation error
+        final errors = response.data["errors"];
+        if (errors != null && errors is Map) {
+          final firstError = errors.values.first;
+          _showError("Validation failed: ${firstError.toString()}");
+        } else {
+          _showError("Validation failed: ${response.data}");
         }
       } else {
         _showError(
