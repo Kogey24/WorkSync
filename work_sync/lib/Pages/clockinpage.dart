@@ -7,8 +7,10 @@ import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
+import 'package:work_sync/Models/sites.dart';
 import 'package:work_sync/Pages/clockoutpage.dart';
 import 'package:work_sync/Providers/login_provider.dart';
+import 'package:work_sync/Providers/sites_provider.dart';
 
 class ClockInPage extends ConsumerStatefulWidget {
   const ClockInPage({super.key});
@@ -23,11 +25,14 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
   double? _latitude;
   double? _longitude;
+  Site? selectedSite; // ✅ hold full site object
 
   @override
   void initState() {
     super.initState();
     _getLocation();
+    // fetch sites on load
+    Future.microtask(() => ref.read(siteProvider.notifier).fetchSites());
   }
 
   Future<void> _takePicture() async {
@@ -63,8 +68,13 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
   }
 
   Future<void> _clockIn() async {
-    if (_image == null || _latitude == null || _longitude == null) {
-      _showError("Please capture a picture and allow location first.");
+    if (_image == null ||
+        _latitude == null ||
+        _longitude == null ||
+        selectedSite == null) {
+      _showError(
+        "Please capture a picture, select a site, and allow location first.",
+      );
       return;
     }
 
@@ -80,6 +90,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
         "mobile": mobile,
         "latitude": _latitude.toString(),
         "longitude": _longitude.toString(),
+        "site_id": selectedSite!.id.toString(), // ✅ send id
         "image": await MultipartFile.fromFile(
           _image!.path,
           filename: _image!.path.split('/').last,
@@ -87,6 +98,9 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
       });
 
       debugPrint("👉 Sending to API: ${formData.fields}");
+      debugPrint(
+        "👉 Selected site: ${selectedSite?.id} - ${selectedSite?.name}",
+      );
       debugPrint("👉 File attached: ${_image!.path}");
 
       final response = await dio.post(
@@ -104,7 +118,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
         final data = response.data;
         final message = data["message"]?.toString() ?? "";
 
-        if (message.toLowerCase().contains("Clock-in successful")) {
+        if (message.toLowerCase().contains("successful")) {
           final apiClockIn = data["data"]?["clock_in"];
           DateTime? parsedClockIn;
 
@@ -181,6 +195,8 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
   @override
   Widget build(BuildContext context) {
+    final sitesState = ref.watch(siteProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Clock In")),
       body: SingleChildScrollView(
@@ -215,6 +231,51 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
                 ),
               ),
             ),
+
+            // ✅ Dropdown with Site object (not just name)
+            Container(
+              height: 50,
+              width: MediaQuery.of(context).size.width,
+              margin: const EdgeInsets.all(20),
+              child: DropdownButtonHideUnderline(
+                child: GFDropdown(
+                  padding: const EdgeInsets.all(10),
+                  borderRadius: BorderRadius.circular(5),
+                  border: const BorderSide(color: Colors.black12, width: 1),
+                  dropdownButtonColor: Colors.white,
+                  hint: const Text("Select Site"),
+                  value: selectedSite,
+                  onChanged: (newValue) {
+                    setState(() {
+                      selectedSite = newValue;
+                    });
+                  },
+                  items: sitesState.when(
+                    data: (sites) => sites
+                        .map(
+                          (site) => DropdownMenuItem<Site>(
+                            value: site,
+                            child: Text(site.name),
+                          ),
+                        )
+                        .toList(),
+                    loading: () => [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("Loading sites..."),
+                      ),
+                    ],
+                    error: (err, _) => [
+                      const DropdownMenuItem(
+                        value: null,
+                        child: Text("Error loading sites"),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
             Container(
               margin: const EdgeInsets.only(top: 12),
               child: DataTable(

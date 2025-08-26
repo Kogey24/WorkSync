@@ -3,12 +3,14 @@ class ClockIn {
   final double latitude;
   final double longitude;
   final String image;
+  final int siteId;
 
   ClockIn({
     required this.mobile,
     required this.latitude,
     required this.longitude,
     required this.image,
+    required this.siteId,
   });
 
   Map<String, dynamic> toJson() {
@@ -17,6 +19,7 @@ class ClockIn {
       "latitude": latitude,
       "longitude": longitude,
       "image": image,
+      "site_id": siteId,
     };
   }
 
@@ -30,6 +33,9 @@ class ClockIn {
           ? double.tryParse(json["longitude"]) ?? 0.0
           : json["longitude"]?.toDouble() ?? 0.0,
       image: json["image"] ?? "",
+      siteId: json["site_id"] is String
+          ? int.tryParse(json["site_id"]) ?? 0
+          : json["site_id"] ?? 0,
     );
   }
 
@@ -38,17 +44,19 @@ class ClockIn {
     double? latitude,
     double? longitude,
     String? image,
+    int? siteId,
   }) {
     return ClockIn(
       mobile: mobile ?? this.mobile,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       image: image ?? this.image,
+      siteId: siteId ?? this.siteId,
     );
   }
 
   @override
   String toString() {
-    return "ClockIn(mobile: $mobile, latitude: $latitude, longitude: $longitude, image: $image)";
+    return "ClockIn(mobile: $mobile, latitude: $latitude, longitude: $longitude, image: $image, siteId: $siteId)";
   }
 }
