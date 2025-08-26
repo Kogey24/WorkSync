@@ -19,7 +19,6 @@ class Site {
     required this.updatedAt,
   });
 
-  /// CopyWith method
   Site copyWith({
     int? id,
     String? name,
@@ -42,7 +41,6 @@ class Site {
     );
   }
 
-  /// From JSON factory
   factory Site.fromJson(Map<String, dynamic> json) {
     return Site(
       id: json['id'] as int,
@@ -56,7 +54,6 @@ class Site {
     );
   }
 
-  /// To JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,

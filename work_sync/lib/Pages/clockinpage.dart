@@ -25,13 +25,13 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
 
   double? _latitude;
   double? _longitude;
-  Site? selectedSite; // ✅ hold full site object
+  Site? selectedSite;
 
   @override
   void initState() {
     super.initState();
     _getLocation();
-    // fetch sites on load
+
     Future.microtask(() => ref.read(siteProvider.notifier).fetchSites());
   }
 
@@ -90,7 +90,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
         "mobile": mobile,
         "latitude": _latitude.toString(),
         "longitude": _longitude.toString(),
-        "site_id": selectedSite!.id.toString(), // ✅ send id
+        "site_id": selectedSite!.id.toString(),
         "image": await MultipartFile.fromFile(
           _image!.path,
           filename: _image!.path.split('/').last,
@@ -232,7 +232,6 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
               ),
             ),
 
-            // ✅ Dropdown with Site object (not just name)
             Container(
               height: 50,
               width: MediaQuery.of(context).size.width,
