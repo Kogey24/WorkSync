@@ -19,6 +19,7 @@ class _LoginpageState extends ConsumerState<Loginpage> {
   final GlobalKey<FormState> _loginKey = GlobalKey<FormState>();
 
   final RegExp phonePattern = RegExp(r'^(?:\+254|0)?7\d{8}$');
+  bool _isLoading = false;
 
   String? _validatePhone(String? value) {
     if (value == null || value.isEmpty) {
@@ -33,6 +34,9 @@ class _LoginpageState extends ConsumerState<Loginpage> {
   final status = Permission.location.request();
   Future<void> _login() async {
     if (_loginKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
       try {
         final login = await ref
             .read(loginProvider.notifier)
@@ -93,6 +97,10 @@ class _LoginpageState extends ConsumerState<Loginpage> {
           ),
         );
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
@@ -170,7 +178,6 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                   Container(
                     width: 250,
                     decoration: BoxDecoration(
-                      color: Colors.purple,
                       borderRadius: BorderRadius.circular(30),
                     ),
                     child: ElevatedButton(
@@ -182,12 +189,23 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                           ),
                         ),
                       ),
-                      onPressed: _login,
-                      child: const Text(
-                        'Login',
-
-                        style: TextStyle(color: Colors.white, fontSize: 18),
-                      ),
+                      onPressed: _isLoading ? null : _login,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                              ),
+                            ),
                     ),
                   ),
                 ],

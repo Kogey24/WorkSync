@@ -37,7 +37,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
   Future<void> _takePicture() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.camera,
-      imageQuality: 80,
+      imageQuality: 50,
     );
     if (pickedFile != null) {
       setState(() {
