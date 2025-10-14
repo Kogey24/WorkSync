@@ -13,7 +13,7 @@ final clockInProvider =
 class ClockInNotifier extends StateNotifier<AsyncValue<Map<String, dynamic>>> {
   ClockInNotifier() : super(const AsyncValue.data({}));
 
-  final String apiUrl = "https://clockin.nexoratech.co.ke/api/staff/clock-in";
+  final String apiUrl = "https://clockin.sarl.co.ke/api/staff/clock-in";
 
   Future<Map<String, dynamic>?> clockIn(ClockIn request) async {
     state = const AsyncValue.loading();

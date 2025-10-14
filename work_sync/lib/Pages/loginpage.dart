@@ -116,7 +116,8 @@ class _LoginpageState extends ConsumerState<Loginpage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color.fromARGB(255, 237, 223, 239),
+              Color.fromARGB(255, 58, 2, 67),
+              Color.fromARGB(255, 232, 176, 240),
               Color.fromARGB(255, 58, 2, 67),
             ],
           ),
@@ -125,20 +126,23 @@ class _LoginpageState extends ConsumerState<Loginpage> {
           child: Column(
             children: [
               Container(
-                margin: const EdgeInsets.fromLTRB(5, 200, 5, 0),
+                margin: const EdgeInsets.fromLTRB(5, 100, 5, 0),
                 padding: const EdgeInsets.symmetric(vertical: 0),
                 child: const Text(
-                  "Welcome to Work Sync",
+                  "Work Sync",
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 35,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFFFFD700),
                   ),
                 ),
               ),
+              const SizedBox(height: 10),
+              Image.asset('asset/working.png', height: 150, width: 90),
+
               Container(
                 alignment: Alignment.center,
-                margin: const EdgeInsets.fromLTRB(5, 50, 5, 0),
+                margin: const EdgeInsets.fromLTRB(5, 10, 5, 0),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -182,7 +186,7 @@ class _LoginpageState extends ConsumerState<Loginpage> {
                           validator: _validatePhone,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(
-                            labelText: 'Phone Number',
+                            labelText: 'Enter Your phone number',
                             hintText: 'e.g. 0712345678 or +254712345678',
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(

@@ -102,7 +102,7 @@ class _ClockInPageState extends ConsumerState<ClockInPage> {
       debugPrint("👉 File attached: ${_image!.path}");
 
       final response = await dio.post(
-        "https://clockin.nexoratech.co.ke/api/staff/clock-in",
+        "https://clockin.sarl.co.ke/api/staff/clock-in",
         data: formData,
         options: Options(
           headers: {"Accept": "application/json"},

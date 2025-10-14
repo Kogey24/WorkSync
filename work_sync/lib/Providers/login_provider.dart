@@ -18,7 +18,7 @@ class LoginNotifier extends StateNotifier<AsyncValue<LoginResponse?>> {
 
     try {
       final uri = Uri.parse(
-        'https://clockin.nexoratech.co.ke/api/staff/check?mobile=$phone',
+        'https://clockin.sarl.co.ke/api/staff/check?mobile=$phone',
       );
 
       final resp = await c

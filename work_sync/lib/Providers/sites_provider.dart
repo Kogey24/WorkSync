@@ -16,7 +16,7 @@ class SiteNotifier extends StateNotifier<AsyncValue<List<Site>>> {
     try {
       state = const AsyncValue.loading();
 
-      final url = Uri.parse("https://clockin.nexoratech.co.ke/api/staff/sites");
+      final url = Uri.parse("https://clockin.sarl.co.ke/api/staff/sites");
       final response = await http.get(url);
       debugPrint("Sites response: ${response.body}");
 

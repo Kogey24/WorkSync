@@ -32,7 +32,7 @@ class AttendanceNotifier extends StateNotifier<AsyncValue<Attendance?>> {
 
     try {
       final url = Uri.parse(
-        "https://clockin.nexoratech.co.ke/api/staff/$staffId/attendance",
+        "https://clockin.sarl.co.ke/api/staff/$staffId/attendance",
       );
 
       final resp = await http.get(url);

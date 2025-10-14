@@ -90,7 +90,7 @@ class _ClockoutState extends ConsumerState<Clockout> {
       debugPrint("👉 File attached: ${_image!.path}");
 
       final response = await dio.post(
-        "https://clockin.nexoratech.co.ke/api/staff/clock-out",
+        "https://clockin.sarl.co.ke/api/staff/clock-out",
         data: formData,
         options: Options(
           headers: {"Accept": "application/json"},
